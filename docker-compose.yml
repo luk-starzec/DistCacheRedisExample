@@ -1,0 +1,51 @@
+version: '3.4'
+
+services:
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    expose:
+      - ${REDIS_PORT}
+    ports:
+      - '${REDIS_PORT}:${REDIS_PORT}'
+    command: redis-server --save 20 1 --loglevel warning --port ${REDIS_PORT} --requirepass ${REDIS_PASSWORD}
+    volumes: 
+      - cache:/data
+
+  exampleapi1:
+    image: ${DOCKER_REGISTRY-}exampleapi
+    container_name: api1
+    build:
+      context: .
+      dockerfile: ExampleApi/Dockerfile
+    depends_on:
+      - cache
+    expose:
+      - 80
+    ports:
+      - 6010:80
+    environment:
+      - REDIS_HOST=cache
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+  exampleapi2:
+    image: ${DOCKER_REGISTRY-}exampleapi
+    container_name: api2
+    build:
+      context: .
+      dockerfile: ExampleApi/Dockerfile
+    depends_on:
+      - cache
+    expose:
+      - 80
+    ports:
+      - 6020:80
+    environment:
+      - REDIS_HOST=cache
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+volumes:
+  cache:
+    driver: local
